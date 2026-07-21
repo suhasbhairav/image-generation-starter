@@ -1,3 +1,4 @@
+import { parseJsonRequest, validateRequestBody } from "@/lib/production-guardrails";
 import OpenAI from "openai";
 
 export const runtime = "nodejs";
@@ -53,7 +54,12 @@ export async function POST(request) {
     );
   }
 
-  const body = await request.json().catch(() => ({}));
+  const body = await parseJsonRequest(request);
+  const guardrail = validateRequestBody(body);
+  if (!guardrail.ok) {
+    return Response.json({ error: guardrail.error }, { status: guardrail.status });
+  }
+
   const prompt = stringValue(body.prompt, "");
 
   if (prompt.length < 8) {
